@@ -5,15 +5,22 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     title: "Sports head brumbal",
     version: "0.0.1",
     type: Phaser.AUTO,
-    scene: [BootScene, GameScene],
+    scene: GameScene,
     input: {
         keyboard: true,
         gamepad: true,
     },
     physics: {
-        default: "arcade",
-        arcade: {
-            gravity: { x: 0, y: 0 },
+        default: "matter",
+        matter: {
+            gravity: { x: 0, y: 1 },
+            setBounds: {
+                left: true,
+                right: true,
+                bottom: true,
+                top: true,
+            },
+            debug: true,
         },
     },
     scale: {
@@ -23,7 +30,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
         width: 1024,
         height: 768,
     },
-    backgroundColor: 0x262626,
+    backgroundColor: 0x000000,
     render: { pixelArt: true },
 };
 
