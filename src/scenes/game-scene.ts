@@ -20,23 +20,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     create() {
-        // Create the 2-layer map
-        // const map = this.make.tilemap({ key: "map" });
-        // const tileset = map.addTilesetImage("kenney-tileset-64px-extruded");
-        // const groundLayer = map.createLayer("Ground", tileset, 0, 0);
-        // const lavaLayer = map.createLayer("Lava", tileset, 0, 0);
-
-        // Set colliding tiles before converting the layer to Matter bodies - same as we've done before
-        // with AP. See post #1 for more on setCollisionByProperty.
-        // groundLayer.setCollisionByProperty({ collides: true });
-        // lavaLayer.setCollisionByProperty({ collides: true });
-
-        // Get the layers registered with Matter. Any colliding tiles will be given a Matter body. We
-        // haven't mapped out custom collision shapes in Tiled so each colliding tile will get a default
-        // rectangle body (similar to AP).
-        // this.matter.world.convertTilemapLayer(groundLayer);
-        // this.matter.world.convertTilemapLayer(lavaLayer);
-
         const gameWidth = this.cameras.main.width;
         const gameHeight = this.cameras.main.height;
         const wallThickness = 100000020;
@@ -74,8 +57,24 @@ export class GameScene extends Phaser.Scene {
             0x666666
         );
 
-        const verts = [0, 0, 100, 0, 0, 100];
-        const rightChamfer = this.add.polygon(200, 200, verts, 0x666666);
+        const vertsLeft = [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 0, y: 100 },
+        ];
+        this.add.polygon(69, 60, Vertices.clockwiseSort(vertsLeft), 0x666666);
+
+        const vertsRight = [
+            { x: -100, y: 0 },
+            { x: 0, y: 0 },
+            { x: 0, y: 100 },
+        ];
+        this.add.polygon(
+            gameWidth - 60,
+            60,
+            Vertices.clockwiseSort(vertsRight),
+            0x666666
+        );
 
         this.matter.add.gameObject(floor, { isStatic: true });
         this.matter.add.gameObject(roof, { isStatic: true });
@@ -84,17 +83,20 @@ export class GameScene extends Phaser.Scene {
         this.matter.add.fromVertices(
             50,
             50,
-            [
-                Vertices.clockwiseSort([
-                    { x: 0, y: 0 },
-                    { x: 50, y: 0 },
-                    { x: 0, y: 50 },
-                ]),
-            ],
+            [Vertices.clockwiseSort(vertsLeft)],
             {
                 isStatic: true,
             }
         );
+        this.matter.add.fromVertices(
+            gameWidth - 70,
+            50,
+            [Vertices.clockwiseSort(vertsRight)],
+            {
+                isStatic: true,
+            }
+        );
+        // this.matter.add.gameObject(rightChamfer, { isStatic: true });
 
         // this.matter.add.fromVertices(200, 200, verts);
 
@@ -102,7 +104,7 @@ export class GameScene extends Phaser.Scene {
         const image1 = this.matter.add.image(275, 100, "emoji", "1f92c");
         // Change it's body to a circle and configure its body parameters
         image1.setCircle(image1.width / 2, {
-            restitution: 1.1,
+            restitution: 0.8,
             friction: 0,
             frictionAir: 0,
         });

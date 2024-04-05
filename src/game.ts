@@ -1,93 +1,146 @@
-import "phaser";
-import gameConfig from "./config";
+import { Bodies, Engine, Render, Runner, World, Vector, Body, Events } from "matter-js";
 
-import { Bodies, Engine, Render, Runner, World } from "matter-js";
+const width = 1200;
+const height = 600;
+const wallThickness = 50000;
 
-export class Game extends Phaser.Game {
-    constructor(config: Phaser.Types.Core.GameConfig) {
-        super(config);
+const keyPressed: Set<string> = new Set();
+
+const engine = Engine.create();
+const render = Render.create({
+    element: document.getElementById("game-container"),
+    engine: engine,
+    options: {
+        width,
+        height,
+        wireframes: false, // Draw the shapes as solid colors
+        background: "#f4f4f8",
+        hasBounds: true,
+    },
+    bounds: {
+        min: Vector.create(0, 0),
+        max: Vector.create(width, height),
+    },
+});
+
+function createStaticShapeFromVertices(vertices: Vector[], position: Vector) {
+    const toReturn = Bodies.fromVertices(0, 0, [vertices], {
+        isStatic: true,
+    });
+
+    setStaticShapePosition(toReturn, position);
+
+    return toReturn;
+}
+
+function setStaticShapePosition(body: Body, position: Vector) {
+    Body.setPosition(
+        body,
+        Vector.create(position.x - body.bounds.min.x, position.y - body.bounds.min.y)
+    );
+}
+
+function createMap() {
+    World.add(
+        engine.world,
+        createStaticShapeFromVertices(
+            [
+                Vector.create(-wallThickness, 0),
+                Vector.create(100, 0),
+                Vector.create(20, height),
+                Vector.create(-wallThickness, height),
+            ],
+            Vector.create(-wallThickness, 0)
+        )
+    );
+
+    World.add(
+        engine.world,
+        createStaticShapeFromVertices(
+            [
+                Vector.create(wallThickness, 0),
+                Vector.create(-100, 0),
+                Vector.create(-20, height),
+                Vector.create(wallThickness, height),
+            ],
+            Vector.create(width - 100, 0)
+        )
+    );
+
+    const floor = Bodies.rectangle(0, 0, width, wallThickness, {
+        isStatic: true,
+    });
+    setStaticShapePosition(floor, Vector.create(0, height - 20));
+
+    const roof = Bodies.rectangle(0, 0, width, wallThickness, {
+        isStatic: true,
+    });
+    setStaticShapePosition(roof, Vector.create(0, -wallThickness + 20));
+
+    const leftGoalTop = Bodies.rectangle(0, 0, 200, 20, { isStatic: true });
+    setStaticShapePosition(leftGoalTop, Vector.create(0, height - 250));
+
+    const rightGoalTop = Bodies.rectangle(0, 0, 200, 20, { isStatic: true });
+    setStaticShapePosition(rightGoalTop, Vector.create(width - 200, height - 250));
+
+    World.add(engine.world, floor);
+    World.add(engine.world, roof);
+    World.add(engine.world, leftGoalTop);
+    World.add(engine.world, rightGoalTop);
+}
+
+const player1 = Bodies.circle(width - 300, height - 100, 50, {
+    render: { fillStyle: "blue" },
+    friction: 10,
+    frictionStatic: 10,
+});
+const player2 = Bodies.circle(300, height - 100, 50, {
+    render: { fillStyle: "green" },
+    friction: 10,
+    frictionStatic: 10,
+});
+const ball = Bodies.circle(width / 2, height - 100, 20, {
+    render: { fillStyle: "red" },
+    friction: 10,
+    frictionStatic: 10,
+});
+
+document.addEventListener("keydown", (event) => {
+    console.log(event.key);
+
+    keyPressed.add(event.key);
+});
+
+document.addEventListener("keyup", (event) => {
+    keyPressed.delete(event.key);
+});
+
+function calculateMovement() {
+    console.log("tick");
+    if (keyPressed.has("ArrowLeft")) {
+        Body.setVelocity(player1, Vector.create(-5, player1.velocity.y));
+    } else if (keyPressed.has("ArrowRight")) {
+        Body.setVelocity(player1, Vector.create(+5, player1.velocity.y));
+    }
+    if (keyPressed.has("ArrowUp")) {
+        Body.setVelocity(player1, Vector.create(player1.velocity.x, player1.velocity.y - 10));
+    }
+
+    if (keyPressed.has("a")) {
+        Body.setVelocity(player2, Vector.create(-5, player2.velocity.y));
+    } else if (keyPressed.has("d")) {
+        Body.setVelocity(player2, Vector.create(+5, player2.velocity.y));
+    }
+    if (keyPressed.has("w")) {
+        Body.setVelocity(player2, Vector.create(player2.velocity.x, player2.velocity.y - 10));
     }
 }
 
-window.addEventListener("load", () => {
-    const game = new Game(gameConfig);
-});
+setInterval(() => calculateMovement(), 50);
 
-// const engine = Engine.create();
-// const render = Render.create({
-//     element: document.getElementById("game-container"),
-//     engine: engine,
-//     options: {
-//         width: 800,
-//         height: 600,
-//         wireframes: false, // Draw the shapes as solid colors
-//         background: "#f4f4f8",
-//     },
-// });
+World.add(engine.world, [player1, player2, ball]);
+createMap();
 
-// // Create a rectangle centered at the top of the screen, (400, 0), with 120px width and 80px height
-// const rectangle = Bodies.rectangle(400, 0, 120, 80, {
-//     restitution: 0.25,
-//     angle: Math.PI / 4,
-// });
-
-// // Create an immovable rectangle at the bottom of the screen that will act as the floor
-// const floor = Bodies.rectangle(400, 575, 800, 50, { isStatic: true });
-
-// // Add the newly minted bodies to our physics simulation
-// World.add(engine.world, [rectangle, floor]);
-
-// const DEGREES_TO_RADIANS = Math.PI / 180; // Helper to convert from degrees to radians
-
-// const circle = Bodies.circle(400, -150, 50, { friction: 0, restitution: 1 });
-// // Polygon parameters: x, y, number of sides, radius of the shape, body options. A three-sided
-// // polygon will give us a triangle.
-// const triangle = Bodies.polygon(400, 0, 3, 50, {
-//     friction: 0,
-//     restitution: 0.5,
-// });
-
-// // Create some vertical walls that are positioned just off screen.
-// const leftWall = Bodies.rectangle(-25, 400, 50, 800, {
-//     isStatic: true,
-//     friction: 0,
-// });
-// const rightWall = Bodies.rectangle(825, 400, 50, 800, {
-//     isStatic: true,
-//     friction: 0,
-// });
-
-// // Create some bouncy, static obstacles in the world for our bodies to ricochet off of
-// const obstacle1 = Bodies.circle(150, 200, 85, {
-//     isStatic: true,
-//     friction: 0,
-//     restitution: 1,
-// });
-// const obstacle2 = Bodies.polygon(400, 400, 3, 75, {
-//     isStatic: true,
-//     angle: 90 * DEGREES_TO_RADIANS,
-//     friction: 0,
-//     restitution: 1,
-// });
-// const obstacle3 = Bodies.circle(650, 200, 85, {
-//     isStatic: true,
-//     friction: 0,
-//     restitution: 1,
-// });
-
-// World.add(engine.world, [
-//     rectangle,
-//     triangle,
-//     circle,
-//     floor,
-//     leftWall,
-//     rightWall,
-//     obstacle1,
-//     obstacle2,
-//     obstacle3,
-// ]);
-
-// // Kick off the simulation and the render loops
-// Render.run(render);
-// const runner = Runner.create();
-// Runner.run(runner, engine);
+Render.run(render);
+const runner = Runner.create();
+Runner.run(runner, engine);
